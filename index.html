@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orden de Trabajo — Vitreo Laboratorio Dental</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f6f3; --surface: #fff; --border: #e2e0da;
+    --text: #1a1a1a; --text-2: #6b6b6b; --text-3: #9b9b9b;
+    --sel-bg: #1a1a1a; --sel-text: #fff;
+    --error: #c0392b; --radius: 8px; --radius-lg: 12px;
+  }
+  body { font-family: -apple-system,'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:40px 16px 80px; line-height:1.5; }
+  .container { max-width:660px; margin:0 auto; }
+  .header { text-align:center; margin-bottom:32px; }
+  .header-img { width:180px; max-width:70%; margin-bottom:10px; border-radius:8px; padding:8px 14px; background:#111; box-sizing:content-box; }
+  .header-sub { font-size:13px; color:var(--text-2); }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:22px; margin-bottom:10px; }
+  .section-title { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--text-3); margin-bottom:14px; padding-bottom:9px; border-bottom:1px solid var(--border); }
+  .field { margin-bottom:13px; }
+  .field:last-child { margin-bottom:0; }
+  .field label { display:block; font-size:13px; font-weight:500; color:var(--text-2); margin-bottom:5px; }
+  .req { color:var(--error); }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:11px; }
+  .span-2 { grid-column:span 2; }
+  input,select,textarea { width:100%; padding:9px 11px; font-size:14px; font-family:inherit; color:var(--text); background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); outline:none; transition:border-color .15s; appearance:none; -webkit-appearance:none; }
+  input:focus,select:focus,textarea:focus { border-color:#999; }
+  input::placeholder,textarea::placeholder { color:var(--text-3); }
+  textarea { resize:vertical; min-height:76px; }
+  select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b6b' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; padding-right:30px; }
+  .field.has-error input,.field.has-error select { border-color:var(--error); }
+  .field-error { font-size:12px; color:var(--error); margin-top:4px; display:none; }
+  .field.has-error .field-error { display:block; }
+
+  /* Odontograma */
+  .odonto-label { font-size:12px; color:var(--text-2); margin-bottom:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .odonto-legend { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-3); margin-left:auto; }
+  .odonto-legend-dot { width:12px; height:12px; border-radius:3px; border:1px solid var(--border); }
+  .odonto-legend-dot.eg { background:var(--sel-bg); }
+  .odonto-arch { display:flex; justify-content:center; gap:3px; margin-bottom:3px; }
+  .odonto-divider { display:flex; align-items:center; justify-content:center; gap:8px; margin:4px 0; font-size:10px; color:var(--text-3); letter-spacing:.06em; }
+  .odonto-divider-line { flex:1; height:1px; background:var(--border); max-width:120px; }
+  .tooth { display:flex; flex-direction:column; align-items:center; cursor:pointer; gap:2px; }
+  .tooth-num { font-size:9px; color:var(--text-3); font-weight:500; line-height:1; transition:color .12s; }
+  .tooth-shape { width:26px; height:26px; border-radius:5px; border:1.5px solid var(--border); background:var(--surface); transition:all .12s; }
+  .tooth.molar .tooth-shape { width:30px; }
+  .tooth.premolar .tooth-shape { width:27px; }
+  .tooth:hover .tooth-shape { background:#f0efec; border-color:#999; }
+  .tooth.sel .tooth-shape { background:var(--sel-bg); border-color:var(--sel-bg); }
+  .tooth.sel .tooth-num { color:var(--sel-bg); font-weight:700; }
+  .odonto-selected { margin-top:10px; padding:8px 12px; background:var(--bg); border-radius:var(--radius); border:1px solid var(--border); font-size:13px; color:var(--text-2); min-height:36px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .odonto-selected-label { font-size:12px; color:var(--text-3); flex-shrink:0; }
+  .odonto-none { font-size:13px; color:var(--text-3); font-style:italic; }
+  .tooth-tag { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; background:var(--sel-bg); color:#fff; border-radius:12px; font-size:12px; font-weight:500; }
+  .tooth-tag button { background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; font-size:14px; line-height:1; padding:0; }
+  .tooth-tag button:hover { color:#fff; }
+  .odonto-actions { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .odonto-btn { font-size:12px; padding:5px 10px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text-2); cursor:pointer; transition:all .12s; }
+  .odonto-btn:hover { border-color:#999; color:var(--text); }
+  .sep { width:2px; background:var(--border); border-radius:2px; margin:0 2px; align-self:stretch; }
+
+  /* Tipos */
+  .tipos-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .tipo-btn { display:flex; align-items:center; gap:8px; padding:9px 11px; border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; font-size:13px; color:var(--text-2); background:var(--surface); transition:all .12s; text-align:left; line-height:1.3; user-select:none; }
+  .tipo-btn:hover { border-color:#999; color:var(--text); }
+  .tipo-btn.sel { border-color:var(--sel-bg); background:var(--sel-bg); color:var(--sel-text); }
+  .tipo-dot { width:15px; height:15px; border-radius:50%; border:1.5px solid currentColor; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+  .tipo-btn.sel .tipo-dot::after { content:''; width:7px; height:7px; border-radius:50%; background:#fff; }
+
+  /* Chips */
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { padding:5px 12px; border:1px solid var(--border); border-radius:20px; font-size:13px; color:var(--text-2); cursor:pointer; transition:all .12s; user-select:none; }
+  .chip:hover { border-color:#999; color:var(--text); }
+  .chip.sel { background:var(--sel-bg); border-color:var(--sel-bg); color:var(--sel-text); }
+
+  /* Implante */
+  .implante-fields { display:none; margin-top:13px; padding:15px; background:var(--bg); border-radius:var(--radius); border:1px solid var(--border); }
+  .implante-fields.show { display:block; }
+
+  /* Submit */
+  .submit-area { margin-top:18px; }
+  .btn-submit { width:100%; padding:14px; font-size:15px; font-weight:600; font-family:inherit; color:#fff; background:var(--text); border:none; border-radius:var(--radius); cursor:pointer; transition:opacity .15s; }
+  .btn-submit:hover { opacity:.85; }
+  .btn-submit:disabled { opacity:.5; cursor:not-allowed; }
+  .loading-txt { display:none; text-align:center; padding:10px; font-size:14px; color:var(--text-2); }
+  .error-banner { display:none; padding:11px 14px; background:#fdf2f2; border:1px solid #f5c6c6; border-radius:var(--radius); font-size:13px; color:var(--error); margin-bottom:12px; }
+  .required-note { font-size:12px; color:var(--text-3); margin-bottom:18px; }
+
+  /* Success */
+  .success-screen { display:none; text-align:center; padding:56px 24px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); }
+  .success-icon { width:54px; height:54px; background:#f0faf4; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 18px; font-size:24px; }
+  .success-screen h2 { font-size:20px; font-weight:600; margin-bottom:8px; }
+  .success-screen p { font-size:14px; color:var(--text-2); max-width:380px; margin:0 auto 18px; line-height:1.6; }
+  .success-detail { display:inline-block; padding:9px 15px; background:var(--bg); border-radius:var(--radius); font-size:13px; color:var(--text-2); }
+
+  @media(max-width:520px) {
+    body { padding:20px 10px 60px; }
+    .grid-2,.grid-3 { grid-template-columns:1fr; }
+    .span-2 { grid-column:span 1; }
+    .tipos-grid { grid-template-columns:1fr; }
+    .card { padding:16px; }
+    .tooth-shape { width:22px!important; height:22px; }
+    .tooth.molar .tooth-shape { width:25px!important; }
+    .tooth-num { font-size:8px; }
+    .odonto-arch { gap:2px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <img src="data:image/jpeg;base64,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" alt="Vitreo Laboratorio Dental" class="header-img" />
+    <p class="header-sub">Puerto Morelos, Quintana Roo &middot; Orden de trabajo</p>
+  </div>
+
+  <div id="form-wrap">
+    <p class="required-note">Los campos con <span class="req">*</span> son obligatorios</p>
+
+    <!-- DOCTOR -->
+    <div class="card">
+      <p class="section-title">Doctor / Clínica</p>
+      <div class="grid-2">
+        <div class="field span-2" id="f-doctor">
+          <label>Nombre del doctor <span class="req">*</span></label>
+          <input type="text" id="doctor" placeholder="Dr. Nombre Apellido" />
+          <p class="field-error">Campo requerido</p>
+        </div>
+        <div class="field">
+          <label>Clínica</label>
+          <input type="text" id="clinica" placeholder="Nombre de la clínica" />
+        </div>
+        <div class="field" id="f-telefono">
+          <label>WhatsApp <span class="req">*</span></label>
+          <input type="tel" id="telefono" placeholder="+52 998 000 0000" />
+          <p class="field-error">Campo requerido</p>
+        </div>
+        <div class="field span-2">
+          <label>Correo electrónico</label>
+          <input type="email" id="email" placeholder="doctor@clinica.com" />
+        </div>
+      </div>
+    </div>
+
+    <!-- PACIENTE -->
+    <div class="card">
+      <p class="section-title">Paciente</p>
+      <div class="grid-3">
+        <div class="field span-2" id="f-paciente">
+          <label>Nombre completo <span class="req">*</span></label>
+          <input type="text" id="paciente" placeholder="Nombre Apellido" />
+          <p class="field-error">Campo requerido</p>
+        </div>
+        <div class="field">
+          <label>Edad</label>
+          <input type="number" id="edad" placeholder="Años" min="1" max="120" />
+        </div>
+        <div class="field span-2">
+          <label>Arcada</label>
+          <select id="arcada">
+            <option value="">— Selecciona —</option>
+            <option>Superior</option><option>Inferior</option><option>Ambas</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ODONTOGRAMA -->
+    <div class="card" id="f-odonto">
+      <p class="section-title">Piezas a trabajar <span class="req">*</span></p>
+      <div class="odonto-label">
+        Selecciona los dientes haciendo click
+        <span class="odonto-legend">
+          <span class="odonto-legend-dot"></span>Sin sel.
+          <span class="odonto-legend-dot eg"></span>Seleccionado
+        </span>
+      </div>
+      <!-- Superior -->
+      <div class="odonto-arch">
+        <div class="tooth molar"    data-num="18" onclick="toggleTooth(this)"><div class="tooth-num">18</div><div class="tooth-shape"></div></div>
+        <div class="tooth molar"    data-num="17" onclick="toggleTooth(this)"><div class="tooth-num">17</div><div class="tooth-shape"></div></div>
+        <div class="tooth molar"    data-num="16" onclick="toggleTooth(this)"><div class="tooth-num">16</div><div class="tooth-shape"></div></div>
+        <div class="tooth premolar" data-num="15" onclick="toggleTooth(this)"><div class="tooth-num">15</div><div class="tooth-shape"></div></div>
+        <div class="tooth premolar" data-num="14" onclick="toggleTooth(this)"><div class="tooth-num">14</div><div class="tooth-shape"></div></div>
+        <div class="tooth"          data-num="13" onclick="toggleTooth(this)"><div class="tooth-num">13</div><div class="tooth-shape"></div></div>
+        <div class="tooth"          data-num="12" onclick="toggleTooth(this)"><div class="tooth-num">12</div><div class="tooth-shape"></div></div>
+        <div class="tooth"          data-num="11" onclick="toggleTooth(this)"><div class="tooth-num">11</div><div class="tooth-shape"></div></div>
+        <div class="sep"></div>
+        <div class="tooth"          data-num="21" onclick="toggleTooth(this)"><div class="tooth-num">21</div><div class="tooth-shape"></div></div>
+        <div class="tooth"          data-num="22" onclick="toggleTooth(this)"><div class="tooth-num">22</div><div class="tooth-shape"></div></div>
+        <div class="tooth"          data-num="23" onclick="toggleTooth(this)"><div class="tooth-num">23</div><div class="tooth-shape"></div></div>
+        <div class="tooth premolar" data-num="24" onclick="toggleTooth(this)"><div class="tooth-num">24</div><div class="tooth-shape"></div></div>
+        <div class="tooth premolar" data-num="25" onclick="toggleTooth(this)"><div class="tooth-num">25</div><div class="tooth-shape"></div></div>
+        <div class="tooth molar"    data-num="26" onclick="toggleTooth(this)"><div class="tooth-num">26</div><div class="tooth-shape"></div></div>
+        <div class="tooth molar"    data-num="27" onclick="toggleTooth(this)"><div class="tooth-num">27</div><div class="tooth-shape"></div></div>
+        <div class="tooth molar"    data-num="28" onclick="toggleTooth(this)"><div class="tooth-num">28</div><div class="tooth-shape"></div></div>
+      </div>
+      <div class="odonto-divider">
+        <div class="odonto-divider-line"></div>
+        <span>SUPERIOR</span><span style="color:var(--border)">|</span><span>INFERIOR</span>
+        <div class="odonto-divider-line"></div>
+      </div>
+      <!-- Inferior -->
+      <div class="odonto-arch">
+        <div class="tooth molar"    data-num="48" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">48</div></div>
+        <div class="tooth molar"    data-num="47" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">47</div></div>
+        <div class="tooth molar"    data-num="46" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">46</div></div>
+        <div class="tooth premolar" data-num="45" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">45</div></div>
+        <div class="tooth premolar" data-num="44" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">44</div></div>
+        <div class="tooth"          data-num="43" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">43</div></div>
+        <div class="tooth"          data-num="42" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">42</div></div>
+        <div class="tooth"          data-num="41" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">41</div></div>
+        <div class="sep"></div>
+        <div class="tooth"          data-num="31" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">31</div></div>
+        <div class="tooth"          data-num="32" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">32</div></div>
+        <div class="tooth"          data-num="33" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">33</div></div>
+        <div class="tooth premolar" data-num="34" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">34</div></div>
+        <div class="tooth premolar" data-num="35" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">35</div></div>
+        <div class="tooth molar"    data-num="36" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">36</div></div>
+        <div class="tooth molar"    data-num="37" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">37</div></div>
+        <div class="tooth molar"    data-num="38" onclick="toggleTooth(this)"><div class="tooth-shape"></div><div class="tooth-num">38</div></div>
+      </div>
+      <div class="odonto-selected" id="odonto-sel">
+        <span class="odonto-selected-label">Piezas:</span>
+        <span class="odonto-none" id="odonto-none">Ninguna seleccionada</span>
+      </div>
+      <p class="field-error" id="odonto-error" style="display:none;margin-top:6px">Selecciona al menos una pieza</p>
+      <div class="odonto-actions">
+        <button type="button" class="odonto-btn" onclick="selArch('sup')">Todo superior</button>
+        <button type="button" class="odonto-btn" onclick="selArch('inf')">Todo inferior</button>
+        <button type="button" class="odonto-btn" onclick="clearTeeth()">Limpiar</button>
+      </div>
+    </div>
+
+    <!-- TIPO -->
+    <div class="card">
+      <p class="section-title">Tipo de trabajo <span class="req">*</span></p>
+      <div class="tipos-grid">
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Corona zirconia monolítica')"><span class="tipo-dot"></span>Corona zirconia monolítica</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Corona zirconia estratificada')"><span class="tipo-dot"></span>Corona zirconia estratificada</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Corona e.max / Disilicato')"><span class="tipo-dot"></span>Corona e.max / Disilicato</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Carilla e.max')"><span class="tipo-dot"></span>Carilla e.max</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Incrustación / Onlay')"><span class="tipo-dot"></span>Incrustación / Onlay</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Prótesis sobre implante unitaria')"><span class="tipo-dot"></span>Prótesis sobre implante unitaria</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Puente sobre implantes')"><span class="tipo-dot"></span>Puente sobre implantes</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Barra sobre implantes')"><span class="tipo-dot"></span>Barra sobre implantes</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'All-on-4 / All-on-X PMMA')"><span class="tipo-dot"></span>All-on-4 / All-on-X PMMA</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'All-on-4 / All-on-X Zirconia')"><span class="tipo-dot"></span>All-on-4 / All-on-X Zirconia</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Provisional PMMA')"><span class="tipo-dot"></span>Provisional PMMA</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Provisional acrílico')"><span class="tipo-dot"></span>Provisional acrílico</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Modelo de estudio')"><span class="tipo-dot"></span>Modelo de estudio</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Modelo quirúrgico')"><span class="tipo-dot"></span>Modelo quirúrgico</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Férula oclusal')"><span class="tipo-dot"></span>Férula oclusal</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Guía quirúrgica')"><span class="tipo-dot"></span>Guía quirúrgica</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Puente de zirconia')"><span class="tipo-dot"></span>Puente de zirconia</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Modelo impreso 3D')"><span class="tipo-dot"></span>Modelo impreso 3D</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Total impresa 3D')"><span class="tipo-dot"></span>Total impresa 3D</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Rebase')"><span class="tipo-dot"></span>Rebase</button>
+        <button type="button" class="tipo-btn" onclick="selTipo(this,'Reparación')"><span class="tipo-dot"></span>Reparación</button>
+      </div>
+      <p class="field-error" id="tipo-error" style="display:none;margin-top:8px">Selecciona un tipo de trabajo</p>
+    </div>
+
+    <!-- ESPECIFICACIONES -->
+    <div class="card">
+      <p class="section-title">Especificaciones</p>
+      <div class="grid-2">
+        <div class="field">
+          <label>Material</label>
+          <select id="material">
+            <option value="">— Selecciona —</option>
+            <option>Zirconia monolítica</option><option>Zirconia estratificada</option>
+            <option>e.max / Disilicato</option><option>PMMA</option><option>Acrílico</option>
+            <option>Metal-cerámica</option><option>Metal-acrílico</option><option>Resina impresa</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Shade / Color</label>
+          <input type="text" id="shade" placeholder="Ej: A2, B1, 2M2" />
+        </div>
+        <div class="field span-2">
+          <label>Fecha de entrega deseada</label>
+          <input type="date" id="fecha-entrega" />
+        </div>
+      </div>
+    </div>
+
+    <!-- IMPLANTE -->
+    <div class="card">
+      <p class="section-title">Datos de implante</p>
+      <div class="chips" id="imp-chips">
+        <span class="chip sel" onclick="chipImp(this,false)">No aplica</span>
+        <span class="chip" onclick="chipImp(this,true)">Incluye implante</span>
+      </div>
+      <div class="implante-fields" id="imp-fields">
+        <div class="grid-2">
+          <div class="field"><label>Marca</label><input type="text" id="imp-marca" placeholder="Nobel, Straumann..." /></div>
+          <div class="field"><label>Conexión</label>
+            <select id="imp-conexion"><option value="">— Selecciona —</option><option>Hexágono interno</option><option>Hexágono externo</option><option>Cono morse</option></select>
+          </div>
+          <div class="field"><label>Diámetro</label><input type="text" id="imp-diametro" placeholder="Ej: 4.1 mm" /></div>
+          <div class="field"><label>Retención</label>
+            <select id="imp-retencion"><option value="">— Selecciona —</option><option>Atornillada</option><option>Cementada</option></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARCHIVOS -->
+    <div class="card">
+      <p class="section-title">Archivos disponibles</p>
+      <div class="chips" id="arch-chips">
+        <span class="chip" onclick="this.classList.toggle('sel')">STL incluido</span>
+        <span class="chip" onclick="this.classList.toggle('sel')">Fotos clínicas</span>
+        <span class="chip" onclick="this.classList.toggle('sel')">Radiografías</span>
+        <span class="chip" onclick="this.classList.toggle('sel')">Registro de mordida</span>
+        <span class="chip" onclick="this.classList.toggle('sel')">Envío por WhatsApp</span>
+        <span class="chip" onclick="this.classList.toggle('sel')">Sin archivos por ahora</span>
+      </div>
+    </div>
+
+    <!-- NOTAS -->
+    <div class="card">
+      <p class="section-title">Notas adicionales</p>
+      <textarea id="notas" placeholder="Instrucciones especiales, indicaciones de diseño, preferencias del paciente..."></textarea>
+    </div>
+
+    <div class="submit-area">
+      <div class="error-banner" id="error-banner">Revisa los campos obligatorios antes de enviar.</div>
+      <div class="loading-txt" id="loading">Enviando orden...</div>
+      <button class="btn-submit" id="btn-submit" onclick="enviar()">Enviar orden de trabajo</button>
+    </div>
+  </div>
+
+  <div class="success-screen" id="success">
+    <div class="success-icon">✓</div>
+    <h2>Orden recibida</h2>
+    <p>Tu orden ha sido enviada correctamente a Vitreo Laboratorio Dental. Te contactaremos a la brevedad.</p>
+    <div class="success-detail" id="success-detail"></div>
+  </div>
+
+</div>
+<script>
+var tipoSel = '';
+var incluyeImp = false;
+var dientes = [];
+
+function toggleTooth(el) {
+  var num = parseInt(el.dataset.num);
+  el.classList.toggle('sel');
+  if (el.classList.contains('sel')) { if (!dientes.includes(num)) dientes.push(num); }
+  else { dientes = dientes.filter(function(d){ return d !== num; }); }
+  dientes.sort(function(a,b){ return a-b; });
+  renderDientes();
+  document.getElementById('odonto-error').style.display = 'none';
+}
+
+function renderDientes() {
+  var c = document.getElementById('odonto-sel');
+  c.querySelectorAll('.tooth-tag').forEach(function(t){ t.remove(); });
+  var none = document.getElementById('odonto-none');
+  if (!dientes.length) { none.style.display=''; return; }
+  none.style.display = 'none';
+  dientes.forEach(function(n) {
+    var t = document.createElement('span');
+    t.className = 'tooth-tag';
+    t.innerHTML = n + '<button type="button" onclick="rmTooth('+n+')">×</button>';
+    c.appendChild(t);
+  });
+}
+
+function rmTooth(n) {
+  dientes = dientes.filter(function(d){ return d !== n; });
+  var el = document.querySelector('.tooth[data-num="'+n+'"]');
+  if (el) el.classList.remove('sel');
+  renderDientes();
+}
+
+function selArch(a) {
+  var nums = a==='sup' ? [11,12,13,14,15,16,17,18,21,22,23,24,25,26,27,28]
+                       : [31,32,33,34,35,36,37,38,41,42,43,44,45,46,47,48];
+  nums.forEach(function(n) {
+    var el = document.querySelector('.tooth[data-num="'+n+'"]');
+    if (el && !el.classList.contains('sel')) { el.classList.add('sel'); if (!dientes.includes(n)) dientes.push(n); }
+  });
+  dientes.sort(function(a,b){ return a-b; });
+  renderDientes();
+}
+
+function clearTeeth() {
+  dientes = [];
+  document.querySelectorAll('.tooth.sel').forEach(function(el){ el.classList.remove('sel'); });
+  renderDientes();
+}
+
+function selTipo(el, tipo) {
+  document.querySelectorAll('.tipo-btn').forEach(function(b){ b.classList.remove('sel'); });
+  el.classList.add('sel'); tipoSel = tipo;
+  document.getElementById('tipo-error').style.display = 'none';
+}
+
+function chipImp(el, show) {
+  document.querySelectorAll('#imp-chips .chip').forEach(function(c){ c.classList.remove('sel'); });
+  el.classList.add('sel'); incluyeImp = show;
+  document.getElementById('imp-fields').classList[show?'add':'remove']('show');
+}
+
+function v(id) { return (document.getElementById(id)||{}).value||''; }
+
+function getChips(id) {
+  var s=[];
+  document.querySelectorAll('#'+id+' .chip.sel').forEach(function(c){ s.push(c.textContent.trim()); });
+  return s.join(', ');
+}
+
+function validate() {
+  var ok = true;
+  [['f-doctor','doctor'],['f-telefono','telefono'],['f-paciente','paciente']].forEach(function(r) {
+    var el = document.getElementById(r[0]);
+    if (!v(r[1])) { el.classList.add('has-error'); ok=false; }
+    else { el.classList.remove('has-error'); }
+  });
+  if (!dientes.length) { document.getElementById('odonto-error').style.display='block'; ok=false; }
+  if (!tipoSel) { document.getElementById('tipo-error').style.display='block'; ok=false; }
+  document.getElementById('error-banner').style.display = ok?'none':'block';
+  return ok;
+}
+
+async function enviar() {
+  if (!validate()) {
+    var first = document.querySelector('.has-error, [style*="block"]');
+    if (first) first.scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+  document.getElementById('btn-submit').disabled = true;
+  document.getElementById('loading').style.display = 'block';
+
+  var payload = {
+    doctor:        v('doctor'),
+    clinica:       v('clinica'),
+    telefono:      v('telefono'),
+    email:         v('email'),
+    paciente:      v('paciente'),
+    edad:          v('edad'),
+    arcada:        v('arcada'),
+    piezas:        dientes.join(', '),
+    tipo:          tipoSel,
+    material:      v('material'),
+    shade:         v('shade'),
+    fechaEntrega:  v('fecha-entrega'),
+    impMarca:      incluyeImp ? v('imp-marca') : '',
+    impConexion:   incluyeImp ? v('imp-conexion') : '',
+    impDiametro:   incluyeImp ? v('imp-diametro') : '',
+    impRetencion:  incluyeImp ? v('imp-retencion') : '',
+    archivos:      getChips('arch-chips'),
+    notas:         v('notas')
+  };
+
+  try {
+    var res = await fetch('/api/orden', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error ' + res.status);
+
+    document.getElementById('form-wrap').style.display = 'none';
+    document.getElementById('success').style.display = 'block';
+    document.getElementById('success-detail').textContent =
+      payload.doctor + ' · ' + payload.paciente + ' · ' + tipoSel + ' · Piezas: ' + payload.piezas;
+
+  } catch(err) {
+    document.getElementById('btn-submit').disabled = false;
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-banner').textContent =
+      'Error al enviar. Por favor intenta de nuevo o contacta a Vitreo Lab directamente.';
+    document.getElementById('error-banner').style.display = 'block';
+    console.error(err);
+  }
+}
+</script>
+</body>
+</html>
