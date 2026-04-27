@@ -1,6 +1,8 @@
 // api/orden.js — Vercel Serverless Function
 // Recibe la orden del formulario y la crea en Notion sin problemas de CORS
 
+const https = require('https');
+
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const NOTION_DB_ID = process.env.NOTION_DB_ID;
 
@@ -30,7 +32,7 @@ function findDoctorId(nombre) {
   return null;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -83,23 +85,38 @@ export default async function handler(req, res) {
     const doctorId = findDoctorId(data.doctor);
     if (doctorId) props['💽 Clientes'] = { relation: [{ id: doctorId }] };
 
-    const notionRes = await fetch('https://api.notion.com/v1/pages', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${NOTION_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28'
-      },
-      body: JSON.stringify({ parent: { database_id: NOTION_DB_ID }, properties: props })
+    // Llamada a Notion via https nativo
+    const notionBody = JSON.stringify({ parent: { database_id: NOTION_DB_ID }, properties: props });
+
+    const result = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'api.notion.com',
+        path: '/v1/pages',
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${NOTION_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Notion-Version': '2022-06-28',
+          'Content-Length': Buffer.byteLength(notionBody)
+        }
+      };
+      const req2 = https.request(options, (res2) => {
+        let data = '';
+        res2.on('data', chunk => data += chunk);
+        res2.on('end', () => resolve({ status: res2.statusCode, body: data }));
+      });
+      req2.on('error', reject);
+      req2.write(notionBody);
+      req2.end();
     });
 
-    if (!notionRes.ok) {
-      const err = await notionRes.json();
+    if (result.status !== 200) {
+      const err = JSON.parse(result.body);
       console.error('Notion error:', err);
       return res.status(500).json({ error: err.message || 'Error al crear en Notion' });
     }
 
-    const created = await notionRes.json();
+    const created = JSON.parse(result.body);
     return res.status(200).json({ ok: true, id: created.id });
 
   } catch (err) {
